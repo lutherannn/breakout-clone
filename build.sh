@@ -1,1 +1,6 @@
-g++ main.cpp -o ./main -lraylib -lGL -lm -lpthread -ldl -lrt -lX11 && ./main
+mkdir -p build
+cd build
+cmake ..
+cmake --build .
+cp ../assets . -r
+./breakout

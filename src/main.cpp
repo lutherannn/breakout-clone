@@ -2,6 +2,7 @@
 #include <vector>
 #include <cstdlib>
 #include <time.h>
+#include <iostream>
 
 // Define variables for later
 const int screenWidth = 1280;
@@ -16,6 +17,7 @@ const int ballSpeed = 30;
 int frames;
 int score;
 bool upwardBallMovement = true;
+bool ballBoxCollision = false;
 
 /* 
  * Block struct
@@ -29,6 +31,7 @@ struct Block {
 	int y;
 	Texture2D texture;
 	bool shown;
+	Rectangle collisionRect;
 };
 
 
@@ -47,6 +50,7 @@ std::vector<Block> populateBlockTable(std::vector<Texture2D> blockTextureTable) 
 		tb.y = row * blockHeight;
 		tb.texture = blockTextureTable[row];
 		tb.shown = true;
+		tb.collisionRect = Rectangle({static_cast< float >(tb.x), static_cast< float >(tb.y), static_cast< float >(tb.texture.width), static_cast< float >(tb.texture.height)});
 		bt.push_back(tb);
 	}
 	return bt;
@@ -78,6 +82,8 @@ int main(void) {
 	playerBlock.texture = playerTexture;
 	playerBlock.x = screenWidth / 2 - playerBlock.texture.width / 2;
 	playerBlock.y = screenHeight - playerBlock.texture.height;
+	playerBlock.collisionRect = Rectangle({static_cast<float>(playerBlock.x), static_cast<float>(playerBlock.y), 
+										   static_cast<float>(playerBlock.texture.width), static_cast<float>(playerBlock.texture.height)});
 	playerBlock.shown = true;
 
 	// Load ball image and texture, create the ball's block struct
@@ -87,6 +93,7 @@ int main(void) {
 	ball.texture = ballTexture;
 	ball.x = screenWidth / 2 - ball.texture.width / 2;
 	ball.y = playerBlock.y - ball.texture.height;
+	ball.collisionRect = Rectangle({static_cast<float>(ball.x), static_cast<float>(ball.y), static_cast<float>(ball.texture.width), static_cast<float>(ball.texture.height)});
 	ball.shown = true;
 	
 	// Main game loop
@@ -121,6 +128,9 @@ int main(void) {
 			for (int i = 0; i < blockTable.size(); i++) {
 				if (blockTable[i].shown) {
 					DrawTexture(blockTable[i].texture, blockTable[i].x, blockTable[i].y, RAYWHITE);
+				if (CheckCollisionRecs(ball.collisionRect, blockTable[i].collisionRect)) {
+					std::cout << "collision" << std::endl;
+				}
 			}
 		}
 		DrawTexture(playerBlock.texture, playerBlock.x, playerBlock.y, RAYWHITE);
