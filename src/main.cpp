@@ -1,8 +1,8 @@
 #include "raylib.h"
 #include <vector>
 #include <cstdlib>
-#include <time.h>
 #include <iostream>
+#include <unistd.h>
 
 // Define variables for later
 const int screenWidth = 1280;
@@ -14,14 +14,10 @@ const int blockHeight = 20;
 const int rows = 5;
 const int cols = screenWidth / blockWidth;
 const int totalBlocks = rows * cols;
-const int ballSpeed = 30;
 
-int frames;
 int score;
-bool upwardBallMovement = true;
-// bool rightBallMovement = true;
-bool ballBoxCollision = false;
-bool paddleCollision = false;
+int vx = 2;
+int vy = -4;
 
 /* 
  * Block struct
@@ -63,8 +59,6 @@ std::vector<Block> populateBlockTable(std::vector<Texture2D> blockTextureTable) 
 }
 
 int main(void) {
-	// Seed the generator for random numbers (used for initial ball trajectory)
-	srand(time(NULL));
 	InitWindow(screenWidth, screenHeight, windowTitle);	
 	SetTargetFPS(targetFPS);
 
@@ -98,32 +92,20 @@ int main(void) {
 	Texture2D ballTexture = LoadTextureFromImage(ballImage);
 	Block ball;
 	ball.texture = ballTexture;
-	ball.x = rand() % screenWidth - ball.texture.width;
+	ball.x = screenWidth / 2 - ball.texture.width / 2;
 	ball.y = (playerBlock.y - ball.texture.height) - 1;
 	ball.collisionRect = Rectangle({static_cast<float>(ball.x), static_cast<float>(ball.y), 
 									static_cast<float>(ball.texture.width), static_cast<float>(ball.texture.height)});
 	ball.shown = true;
-	
-	std::cout << playerBlock.x << ", " << playerBlock.y << std::endl;
-	std::cout << playerBlock.collisionRect.x << ", " << playerBlock.collisionRect.y << std::endl;
 
 	// Main game loop
     while (!WindowShouldClose())
     {
-		//Update ball's position every second, i think?
-		int delta = GetFrameTime();
-		frames++;
-		if (frames % (targetFPS / 4) == 0) {
-			if (upwardBallMovement) {
-				ball.y -= ballSpeed;
-				ball.collisionRect.y = ball.y;
-			} else {
-				ball.y += ballSpeed;
-				ball.collisionRect.y = ball.y;
-			}
-			frames = 0;
-		}
-
+		ball.y += vy;
+		ball.collisionRect.y = ball.y;
+		ball.x += vx;
+		ball.collisionRect.x = ball.x;
+		
 		//Player movement
 		if (IsKeyDown(KEY_RIGHT)) {
 			if (playerBlock.x < screenWidth - playerBlock.texture.width) {
@@ -139,10 +121,12 @@ int main(void) {
 			}
 		}
 
-		// There is considerable lag when the ball hits the paddle, i think? Managable for now.
 		if (CheckCollisionRecs(ball.collisionRect, playerBlock.collisionRect)) {
-			ball.y = (playerBlock.y - ball.texture.height) - 1;
-			upwardBallMovement = true;
+			vy = -vy;	
+		}
+
+		if (ball.x >= screenWidth - ball.texture.width || ball.x <= 0) {
+			vx = -vx;
 		}
 
 		// Draw to screen
@@ -155,24 +139,24 @@ int main(void) {
 					DrawTexture(blockTable[i].texture, blockTable[i].x, blockTable[i].y, RAYWHITE);
 				if (CheckCollisionRecs(ball.collisionRect, blockTable[i].collisionRect) && blockTable[i].shown) {
 					blockTable[i].shown = false;
-					upwardBallMovement = false;
+					vy = -vy;
 					score++;
+					// This break is here because before if two blocks were hit at the same time, the ball would continue upward.
+					// However, this breaks intended behavior of hitting two blocks at the same y level
+					break;
 				}
 			}
 		}
 
-		if (ball.y >= screenHeight) {
-			std::cout << "Game over" << std::endl;
-			CloseWindow();
-		}
+			if (ball.y >= screenHeight) {
+				std::cout << "Game over" << std::endl;
+				break;
+			}
 
-		if (ball.y <= ball.texture.height) {
-			upwardBallMovement = false;
-		}
-
-		DrawTexture(playerBlock.texture, playerBlock.x, playerBlock.y, RAYWHITE);
-		DrawTexture(ball.texture, ball.x, ball.y, RAYWHITE);
-        DrawText("Score: ", screenWidth - 200, screenHeight - 40, 36, RED);
+			DrawTexture(playerBlock.texture, playerBlock.x, playerBlock.y, RAYWHITE);
+			DrawTexture(ball.texture, ball.x, ball.y, RAYWHITE);
+        	// DrawText("Score: ", screenWidth - 200, screenHeight - 40, 36, RED);
+		
 		EndDrawing();
     }
     CloseWindow();
