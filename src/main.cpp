@@ -1,4 +1,5 @@
 #include "raylib.h"
+#include <algorithm>
 #include <vector>
 #include <cstdlib>
 #include <iostream>
@@ -35,6 +36,17 @@ struct Block {
 	Rectangle collisionRect;
 };
 
+
+int getOverlap(int inputArray[]) {
+	int r = 0;
+	for (int i = 0; i < sizeof(inputArray) / sizeof(inputArray[0]); i++) {
+		std::cout << "ARRAY: " << inputArray[i] << std::endl;
+		if (inputArray[i] < inputArray[r]) {
+			r = i;
+		}
+	}
+	return r;
+}
 
 /*
  * populateBlockTable
@@ -122,7 +134,18 @@ int main(void) {
 		}
 
 		if (CheckCollisionRecs(ball.collisionRect, playerBlock.collisionRect)) {
-			vy = -vy;	
+			int collisionArray[] = {
+							(ball.x + ball.texture.width) - playerBlock.x,	
+							(playerBlock.x + playerBlock.texture.width) - ball.x
+			};
+			int impactOverlap = getOverlap(collisionArray);
+			std::cout << impactOverlap << std::endl;
+			if (impactOverlap == 0) {
+				if (vx > 0) { vx = -vx; } //is the ball moving left?
+			} else if (impactOverlap == 1) {
+				if (vx < 0) { vx = -vx; } // is the ball moving right?
+			}
+			vy = -vy;
 		}
 
 		if (ball.x >= screenWidth - ball.texture.width || ball.x <= 0) {
@@ -133,6 +156,8 @@ int main(void) {
         BeginDrawing();
             ClearBackground(BLACK);
 			
+			// Should this for loop be outside of the draw loop, and i just make a new table or something of blocks that actually get drawn?
+			// I suppose either way it gets iterated over maybe way too often but it seems cleaner to be outside of the draw loop
 			for (int i = 0; i < blockTable.size(); i++) {
 				// Draw the blocks that haven't been destroyed
 				if (blockTable[i].shown) {
