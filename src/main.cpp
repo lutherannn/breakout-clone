@@ -1,9 +1,9 @@
 #include "raylib.h"
-#include <algorithm>
 #include <vector>
 #include <cstdlib>
 #include <iostream>
 #include <unistd.h>
+#include <cmath>
 
 // Define variables for later
 const int screenWidth = 1280;
@@ -17,8 +17,8 @@ const int cols = screenWidth / blockWidth;
 const int totalBlocks = rows * cols;
 
 int score;
-int vx = 2;
-int vy = -4;
+float vx = 2.0;
+float vy = -4.0;
 
 /* 
  * Block struct
@@ -38,6 +38,9 @@ struct Block {
 
 
 int getOverlap(int inputArray[]) {
+	if (inputArray[0] == inputArray[1]) {
+		return 2;
+	}
 	int r = 0;
 	for (int i = 0; i < sizeof(inputArray) / sizeof(inputArray[0]); i++) {
 		std::cout << "ARRAY: " << inputArray[i] << std::endl;
@@ -45,6 +48,16 @@ int getOverlap(int inputArray[]) {
 			r = i;
 		}
 	}
+	return r;
+}
+
+
+std::vector<float> getSpeeds(float playerX, float playerWidth, float ballX, float ballWidth) {
+	std::vector<float> r;
+	float hitPos = ( (playerX + (playerWidth / 2)) - (ballX + (ballWidth / 2) / (playerWidth / 2)));
+	float angle = hitPos * 60.0f * (M_PI / 180.0f);
+	r.push_back(5 * sin(angle));
+	r.push_back(-5 * cos(angle));
 	return r;
 }
 
@@ -121,14 +134,14 @@ int main(void) {
 		//Player movement
 		if (IsKeyDown(KEY_RIGHT)) {
 			if (playerBlock.x < screenWidth - playerBlock.texture.width) {
-				playerBlock.x += 5;
+				playerBlock.x += 10;
 				playerBlock.collisionRect.x = playerBlock.x;
 			}
 		}
 
 		if (IsKeyDown(KEY_LEFT)) {
 			if (playerBlock.x > 0) {
-				playerBlock.x -= 5;
+				playerBlock.x -= 10;
 				playerBlock.collisionRect.x = playerBlock.x;
 			}
 		}
@@ -138,12 +151,26 @@ int main(void) {
 							(ball.x + ball.texture.width) - playerBlock.x,	
 							(playerBlock.x + playerBlock.texture.width) - ball.x
 			};
+
 			int impactOverlap = getOverlap(collisionArray);
-			std::cout << impactOverlap << std::endl;
-			if (impactOverlap == 0) {
-				if (vx > 0) { vx = -vx; } //is the ball moving left?
-			} else if (impactOverlap == 1) {
-				if (vx < 0) { vx = -vx; } // is the ball moving right?
+			
+			if (impactOverlap == 0 && collisionArray[impactOverlap] <= 50) {
+				std::vector<float> speeds = getSpeeds(playerBlock.x, playerBlock.texture.width, ball.x, ball.texture.width);
+				std::cout << "X: " << speeds[0] << " Y: " << speeds[1] << std::endl;
+				vx += speeds[0];
+				vy += speeds[1];
+				std::cout << "VX: " << vx << " " << "VY: " << vy << std::endl; 
+			} else if (impactOverlap == 1 && collisionArray[impactOverlap] > 50) {
+				std::vector<float> speeds = getSpeeds(playerBlock.x, playerBlock.texture.width, ball.x, ball.texture.width);
+				vx -= speeds[0];
+				vy -= speeds[1];
+			} else if (impactOverlap == 2) {
+				// Do nothing i guess lol
+			}
+			if (impactOverlap == 0 && vx > 0) {
+				vx = -vx;
+			} else if (impactOverlap == 1 && vx < 0) {
+				vx = -vx;
 			}
 			vy = -vy;
 		}
