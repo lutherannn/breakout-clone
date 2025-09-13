@@ -43,7 +43,6 @@ int getOverlap(int inputArray[]) {
 	}
 	int r = 0;
 	for (int i = 0; i < sizeof(inputArray) / sizeof(inputArray[0]); i++) {
-		std::cout << "ARRAY: " << inputArray[i] << std::endl;
 		if (inputArray[i] < inputArray[r]) {
 			r = i;
 		}
@@ -154,20 +153,14 @@ int main(void) {
 
 			int impactOverlap = getOverlap(collisionArray);
 			
-			if (impactOverlap == 0 && collisionArray[impactOverlap] <= 50) {
-				std::vector<float> speeds = getSpeeds(playerBlock.x, playerBlock.texture.width, ball.x, ball.texture.width);
-				std::cout << "X: " << speeds[0] << " Y: " << speeds[1] << std::endl;
-				vx += speeds[0];
-				vy += speeds[1];
-				std::cout << "VX: " << vx << " " << "VY: " << vy << std::endl; 
-			} else if (impactOverlap == 1 && collisionArray[impactOverlap] > 50) {
-				std::vector<float> speeds = getSpeeds(playerBlock.x, playerBlock.texture.width, ball.x, ball.texture.width);
-				vx -= speeds[0];
-				vy -= speeds[1];
-			} else if (impactOverlap == 2) {
-				// Do nothing i guess lol
-			}
+			std::vector<float> speeds = getSpeeds(playerBlock.x, playerBlock.texture.width, ball.x, ball.texture.width);
+			std::cout << "X: " << speeds[0] << " Y: " << speeds[1] << std::endl;
+			vx = speeds[0];
+			vy = speeds[1];
+			std::cout << "VX: " << vx << " " << "VY: " << vy << std::endl; 
+			
 			if (impactOverlap == 0 && vx > 0) {
+				// Do nothing i guess lol
 				vx = -vx;
 			} else if (impactOverlap == 1 && vx < 0) {
 				vx = -vx;
