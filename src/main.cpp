@@ -1,4 +1,5 @@
 #include "raylib.h"
+#include <filesystem>
 #include <vector>
 #include <cstdlib>
 #include <iostream>
@@ -15,6 +16,7 @@ const int blockHeight = 20;
 const int rows = 5;
 const int cols = screenWidth / blockWidth;
 const int totalBlocks = rows * cols;
+const int speed = 5;
 
 int score;
 float vx = 2.0;
@@ -34,6 +36,8 @@ struct Block {
 	Texture2D texture;
 	bool shown;
 	Rectangle collisionRect;
+	int hitsToBreak;
+	int hits;
 };
 
 
@@ -54,9 +58,9 @@ int getOverlap(int inputArray[]) {
 std::vector<float> getSpeeds(float playerX, float playerWidth, float ballX, float ballWidth) {
 	std::vector<float> r;
 	float hitPos = ( (playerX + (playerWidth / 2)) - (ballX + (ballWidth / 2) / (playerWidth / 2)));
-	float angle = hitPos * 60.0f * (M_PI / 180.0f);
-	r.push_back(5 * sin(angle));
-	r.push_back(-5 * cos(angle));
+	float angle = hitPos * 80.0f * (M_PI / 180.0f);
+	r.push_back(speed * sin(angle));
+	r.push_back(-speed * cos(angle));
 	return r;
 }
 
@@ -70,6 +74,8 @@ std::vector<Block> populateBlockTable(std::vector<Texture2D> blockTextureTable) 
 	for (int i = 0; i < totalBlocks; i++) {
 		int col = i % cols;
 		int row = i / cols;
+		int maxRow = rows - 1;
+		int invertedRow = maxRow - row;
 		Block tb;
 		tb.x = col * blockWidth;
 		tb.y = row * blockHeight;
@@ -77,6 +83,8 @@ std::vector<Block> populateBlockTable(std::vector<Texture2D> blockTextureTable) 
 		tb.shown = true;
 		tb.collisionRect = Rectangle({static_cast< float >(tb.x), static_cast< float >(tb.y), 
 		   							  static_cast< float >(tb.texture.width), static_cast< float >(tb.texture.height)});
+		tb.hitsToBreak = invertedRow + 1;
+		tb.hits = 0;
 		bt.push_back(tb);
 	}
 	return bt;
@@ -154,13 +162,10 @@ int main(void) {
 			int impactOverlap = getOverlap(collisionArray);
 			
 			std::vector<float> speeds = getSpeeds(playerBlock.x, playerBlock.texture.width, ball.x, ball.texture.width);
-			std::cout << "X: " << speeds[0] << " Y: " << speeds[1] << std::endl;
 			vx = speeds[0];
 			vy = speeds[1];
-			std::cout << "VX: " << vx << " " << "VY: " << vy << std::endl; 
 			
 			if (impactOverlap == 0 && vx > 0) {
-				// Do nothing i guess lol
 				vx = -vx;
 			} else if (impactOverlap == 1 && vx < 0) {
 				vx = -vx;
@@ -183,7 +188,10 @@ int main(void) {
 				if (blockTable[i].shown) {
 					DrawTexture(blockTable[i].texture, blockTable[i].x, blockTable[i].y, RAYWHITE);
 				if (CheckCollisionRecs(ball.collisionRect, blockTable[i].collisionRect) && blockTable[i].shown) {
-					blockTable[i].shown = false;
+					blockTable[i].hits++;
+					if (blockTable[i].hits >= blockTable[i].hitsToBreak) {
+						blockTable[i].shown = false;
+					}
 					vy = -vy;
 					score++;
 					// This break is here because before if two blocks were hit at the same time, the ball would continue upward.
@@ -197,11 +205,10 @@ int main(void) {
 				std::cout << "Game over" << std::endl;
 				break;
 			}
-
 			DrawTexture(playerBlock.texture, playerBlock.x, playerBlock.y, RAYWHITE);
 			DrawTexture(ball.texture, ball.x, ball.y, RAYWHITE);
-        	// DrawText("Score: ", screenWidth - 200, screenHeight - 40, 36, RED);
-		
+			DrawText(TextFormat("Score: %i", score), screenWidth - 200, screenHeight - 40, 32, RED);
+			
 		EndDrawing();
     }
     CloseWindow();
