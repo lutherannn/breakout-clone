@@ -1,5 +1,4 @@
 #include "raylib.h"
-#include <filesystem>
 #include <vector>
 #include <cstdlib>
 #include <iostream>
@@ -165,16 +164,21 @@ int main(void) {
 			vx = speeds[0];
 			vy = speeds[1];
 			
+			/*
 			if (impactOverlap == 0 && vx > 0) {
 				vx = -vx;
 			} else if (impactOverlap == 1 && vx < 0) {
 				vx = -vx;
-			}
+			}*/
 			vy = -vy;
 		}
 
 		if (ball.x >= screenWidth - ball.texture.width || ball.x <= 0) {
 			vx = -vx;
+		}
+
+		if (ball.y <= 0) {
+			vy = -vy;
 		}
 
 		// Draw to screen
@@ -190,10 +194,10 @@ int main(void) {
 				if (CheckCollisionRecs(ball.collisionRect, blockTable[i].collisionRect) && blockTable[i].shown) {
 					blockTable[i].hits++;
 					if (blockTable[i].hits >= blockTable[i].hitsToBreak) {
+						score++;
 						blockTable[i].shown = false;
 					}
 					vy = -vy;
-					score++;
 					// This break is here because before if two blocks were hit at the same time, the ball would continue upward.
 					// However, this breaks intended behavior of hitting two blocks at the same y level
 					break;
@@ -205,6 +209,7 @@ int main(void) {
 				std::cout << "Game over" << std::endl;
 				break;
 			}
+
 			DrawTexture(playerBlock.texture, playerBlock.x, playerBlock.y, RAYWHITE);
 			DrawTexture(ball.texture, ball.x, ball.y, RAYWHITE);
 			DrawText(TextFormat("Score: %i", score), screenWidth - 200, screenHeight - 40, 32, RED);
